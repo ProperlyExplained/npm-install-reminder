@@ -1,36 +1,62 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+const execSync = require('child_process').execSync;
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+let npmInstallReminderActivated = true;
 
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+async function activate(context) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "npm-install-reminder" is now active!');
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  let checkPackageLock = true;
+  let commitId;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('npm-install-reminder.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+  const execInWorkspace = command => execSync(command, { cwd: vscode.workspace.workspaceFolders[0].uri.fsPath }).toString();
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from npm-install-reminder!');
-	});
-
-	context.subscriptions.push(disposable);
+  try {
+    while(npmInstallReminderActivated) {
+      if(checkPackageLock) {
+        let output = execInWorkspace('git diff --name-only @ @{1}');
+        if(output.split('\n').find(f => f.endsWith('package-lock.json'))) {
+          checkPackageLock = false;
+          commitId = execInWorkspace('git rev-parse HEAD').toString();
+          let selection = await vscode.window.showInformationMessage(
+            'A difference from the previous commit in the package-lock.json has been detected. Do you want to run "npm install"?',
+            'Yes',
+            'No'
+          );
+          if(selection == 'Yes') {
+            await new Promise(resolve => {
+              vscode.window.withProgress({
+                title: 'Running npm install...',
+                location: vscode.ProgressLocation.Notification
+              }, async () => {
+                execInWorkspace('npm install');
+                resolve();
+              });
+            });
+          }
+        }
+      } else {
+        let output = execInWorkspace('git rev-parse HEAD').toString();
+        if(commitId != output) {
+          checkPackageLock = true;
+        }
+      }
+      await sleep(1_000);
+    }
+  } catch(e) {
+    vscode.window.showErrorMessage("An error has occurred. Please make sure you have git and npm installed, and that the project has git initialized and at least 2 commits. Then please restart this plugin by deactivating and reactivating it.");
+    console.error(e);
+  }
 }
 
-// this method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() {
+  npmInstallReminderActivated = false;
+}
 
 module.exports = {
-	activate,
-	deactivate
+  activate,
+  deactivate
 }
