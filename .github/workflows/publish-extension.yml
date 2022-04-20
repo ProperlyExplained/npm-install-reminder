@@ -1,7 +1,7 @@
 on:
   workflow_dispatch
 
-name: Deploy Extension
+name: Publish extension
 jobs:
   deploy:
     runs-on: ubuntu-latest
