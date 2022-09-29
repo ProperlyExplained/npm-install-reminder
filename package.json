@@ -7,9 +7,9 @@
     "email": "adriancuadradochavarria97@gmail.com",
     "name": "Adrian Cuadrado"
   },
-  "homepage": "https://github.com/adriancuadrado/npm-install-reminder",
+  "homepage": "https://github.com/ProperlyExplained/npm-install-reminder",
   "repository": {
-    "url": "https://github.com/adriancuadrado/npm-install-reminder.git"
+    "url": "https://github.com/ProperlyExplained/npm-install-reminder.git"
   },
   "publisher": "AdrianCuadrado",
   "engines": {
