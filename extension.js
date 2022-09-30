@@ -21,11 +21,6 @@ async function activate() {
 
   const execInWorkspace = command => execSync(command, { cwd: vscode.workspace.workspaceFolders[0].uri.fsPath }).toString();
 
-  if(throwsException(() => execInWorkspace('git status'))) {
-    vscode.window.showErrorMessage('No git repository detected. Please run "git init" or "git clone <repo>". Then restart VSCode.');
-    return;
-  }
-
   while(true) {
     try {
       if(checkPackageLock) {
@@ -56,9 +51,10 @@ async function activate() {
           checkPackageLock = true;
         }
       }
-      await sleep(1_000);
     } catch(e) {
       console.error(e);
+    } finally {
+      await sleep(1_000);
     }
   }
 }
